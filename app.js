@@ -307,7 +307,7 @@
       const slide = document.createElement('div');
       slide.className = 'carousel-slide';
       const img = document.createElement('img');
-      img.src = `${BASE}/assets/photos/${src}`;
+      img.src = BASE ? `${BASE}/assets/photos/${src}` : `assets/photos/${src}`;
       img.alt = '';
       slide.appendChild(img);
       stage.appendChild(slide);
