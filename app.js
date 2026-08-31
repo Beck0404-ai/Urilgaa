@@ -373,12 +373,6 @@
   const wishMsg = document.getElementById('wish-msg');
 
   let wishes = JSON.parse(localStorage.getItem('khoserdene_wishes') || '[]');
-  if (!wishes.length) {
-    wishes = [
-      { name: 'Бат & Оюунаа', message: 'Хоёр дүүдээ насан туршийн аз жаргал хүсэн ерөөе!', created_at: '2026-08-30 14:20' },
-      { name: 'Ганзориг', message: 'Түмэн насалж, буман жаргаарай! Хурим нь сайхан болоорой.', created_at: '2026-08-31 09:15' }
-    ];
-  }
   let wishCurrent = 0;
 
   const buildWishSlide = (w) => {
@@ -391,17 +385,27 @@
     slide.append(name, label, msg, date);
     return slide;
   };
-  const renderWish = (i) => {
-    if (!wishStage || !wishes.length) return;
-    wishCurrent = ((i % wishes.length) + wishes.length) % wishes.length;
+
+  const renderWishesView = () => {
+    if (!wishStage) return;
+    if (!wishes.length) {
+      wishStage.innerHTML = `<p class="wishes-empty" style="color:var(--ink-soft);font-size:.85rem;padding:20px;text-align:center;">Шинэ гэр бүлд хамгийн анхны сэтгэлийн үгээ үлдээгээрэй ♡</p>`;
+      if (wishPrev) wishPrev.style.display = 'none';
+      if (wishNext) wishNext.style.display = 'none';
+      return;
+    }
+    if (wishPrev) wishPrev.style.display = wishes.length > 1 ? '' : 'none';
+    if (wishNext) wishNext.style.display = wishes.length > 1 ? '' : 'none';
+
+    wishCurrent = ((wishCurrent % wishes.length) + wishes.length) % wishes.length;
     wishStage.replaceChildren(buildWishSlide(wishes[wishCurrent]));
   };
 
-  renderWish(0);
-  wishPrev?.addEventListener('click', () => renderWish(wishCurrent - 1));
-  wishNext?.addEventListener('click', () => renderWish(wishCurrent + 1));
+  renderWishesView();
+  wishPrev?.addEventListener('click', () => { wishCurrent--; renderWishesView(); });
+  wishNext?.addEventListener('click', () => { wishCurrent++; renderWishesView(); });
 
-  // Wish submit with Telegram notification
+  // Wish submit with Real-Time update & Telegram notification
   wishForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     wishMsg.className = 'form-msg';
@@ -425,9 +429,11 @@
       await sendTelegramMessage(botToken, chatId, tgText);
     }
 
-    wishes.unshift({ name, message, created_at: new Date().toISOString().replace('T', ' ').slice(0, 19) });
+    const newWish = { name, message, created_at: new Date().toISOString().replace('T', ' ').slice(0, 19) };
+    wishes.unshift(newWish);
     localStorage.setItem('khoserdene_wishes', JSON.stringify(wishes));
-    renderWish(0);
+    wishCurrent = 0;
+    renderWishesView();
 
     setTimeout(() => {
       if (btn) { btn.disabled = false; btn.classList.remove('is-loading'); }
