@@ -1,14 +1,4 @@
 (() => {
-  // =========================================================================
-  // TELEGRAM BOT INTEGRATION CONFIGURATION
-  // -------------------------------------------------------------------------
-  // Replace these with your Telegram Bot Token & Chat ID:
-  // 1. Create a bot with @BotFather on Telegram -> get BOT_TOKEN
-  // 2. Get your Chat ID with @userinfobot -> get CHAT_ID
-  // =========================================================================
-  const TELEGRAM_BOT_TOKEN = window.TELEGRAM_BOT_TOKEN || '';
-  const TELEGRAM_CHAT_ID = window.TELEGRAM_CHAT_ID || '';
-
   const BASE = document.body.dataset.base || '';
   let PHOTOS = [];
   try { PHOTOS = JSON.parse(document.body.dataset.photos || '[]'); } catch { PHOTOS = []; }
@@ -16,7 +6,7 @@
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const guard = (fn) => { try { fn(); } catch (_) { /* no-op */ } };
 
-  // ---------- Language ----------
+  // ---------- Language (kk <-> tr) ----------
   const LANG_KEY = 'shakyru.lang';
   const langBtn = document.getElementById('lang-toggle');
   const getLang = () => (document.documentElement.dataset.lang === 'tr' ? 'tr' : 'kk');
@@ -31,7 +21,7 @@
       needWish: 'Сэтгэлийн үгээ бичнэ үү',
       needAttend: 'Хариултаа сонгоно уу',
       rsvpOk: 'Баярлалаа! Хариултыг хүлээн авлаа ♡',
-      wishPending: 'Баярлалаа! Сэтгэлийн үг нийтлэгдлээ ♡',
+      wishPending: 'Баярлалаа! Сэтгэлийн үг таныг шалгасны дараа нийтлэгдэнэ ♡',
       wishOk: 'Баярлалаа! Сэтгэлийн үгийг хүлээн авлаа ♡',
       tooOften: 'Хэт олон удаа илгээгдлээ. Дараа дахин оролдоно уу.',
       err: 'Алдаа гарлаа. Дахин оролдоно уу.',
@@ -53,7 +43,7 @@
       needWish: 'Dileğinizi yazın',
       needAttend: 'Bir yanıt seçin',
       rsvpOk: 'Teşekkürler! Yanıtınız alındı ♡',
-      wishPending: 'Teşekkürler! Dileğiniz alındı ♡',
+      wishPending: 'Teşekkürler! Dileğiniz incelendikten sonra yayınlanacak ♡',
       wishOk: 'Teşekkürler! Dileğiniz alındı ♡',
       tooOften: 'Çok sık gönderildi. Lütfen daha sonra tekrar deneyin.',
       err: 'Bir hata oluştu. Lütfen tekrar deneyin.',
@@ -135,6 +125,44 @@
     revealable.forEach((el) => reveal.observe(el));
   }
 
+  // ---------- Decorative motion ----------
+  if (!reduceMotion) {
+    const starfield = document.getElementById('starfield');
+    if (starfield) {
+      const N = Math.max(40, Math.min(110, Math.round(window.innerWidth * window.innerHeight / 13000)));
+      const frag = document.createDocumentFragment();
+      for (let i = 0; i < N; i++) {
+        const s = document.createElement('span');
+        const size = Math.random() < 0.82 ? 1.4 : 2.6;
+        s.style.left = (Math.random() * 100).toFixed(2) + '%';
+        s.style.top = (Math.random() * 100).toFixed(2) + '%';
+        s.style.width = size + 'px';
+        s.style.height = size + 'px';
+        s.style.setProperty('--tw', (2.5 + Math.random() * 4).toFixed(2) + 's');
+        s.style.animationDelay = (-Math.random() * 5).toFixed(2) + 's';
+        s.style.opacity = (0.3 + Math.random() * 0.6).toFixed(2);
+        frag.appendChild(s);
+      }
+      starfield.appendChild(frag);
+    }
+
+    const dust = document.getElementById('hero-dust');
+    if (dust) {
+      const frag = document.createDocumentFragment();
+      for (let i = 0; i < 16; i++) {
+        const p = document.createElement('span');
+        p.style.left = (Math.random() * 100).toFixed(2) + '%';
+        p.style.setProperty('--dur', (7 + Math.random() * 7).toFixed(1) + 's');
+        p.style.setProperty('--dx', (Math.random() * 40 - 20).toFixed(0) + 'px');
+        p.style.animationDelay = (-Math.random() * 10).toFixed(1) + 's';
+        const sz = (2 + Math.random() * 2).toFixed(1);
+        p.style.width = sz + 'px'; p.style.height = sz + 'px';
+        frag.appendChild(p);
+      }
+      dust.appendChild(frag);
+    }
+  }
+
   // ---------- Music ----------
   const music = document.getElementById('bg-music');
   const musicBtn = document.getElementById('music-btn');
@@ -166,11 +194,9 @@
   });
   music?.addEventListener('pause', () => { stopFade(); setPlaying(false); });
   music?.addEventListener('play', () => setPlaying(true));
-  onLang(() => setPlaying(!!music && !music.paused));
 
-  // ---------- Gate ----------
+  // ---------- Invitation gate ----------
   const introGate = document.getElementById('intro-gate');
-  const introVideo = document.getElementById('intro-video');
   const introOpen = document.getElementById('intro-open');
   const INTRO_KEY = `shakyru.introGate.${BASE || 'root'}.v1`;
 
@@ -201,32 +227,24 @@
     const setIntroLocked = (locked) => {
       document.body.classList.toggle('has-intro-gate', locked);
       if (introPage) introPage.inert = locked;
-      if (themeBtn) themeBtn.inert = locked;
-      if (langBtn) langBtn.inert = locked;
-      if (musicBtn) musicBtn.inert = locked;
     };
 
     if (seenIntro && !forceIntro) {
       introGate.hidden = true;
-      if (getTheme() === 'dark') activateHeroVideo();
     } else {
       setIntroLocked(true);
       let started = false;
       let revealed = false;
-      let revealTimer = null;
 
       const revealIntro = () => {
         if (revealed) return;
         revealed = true;
-        if (revealTimer) clearTimeout(revealTimer);
         try { sessionStorage.setItem(INTRO_KEY, 'true'); } catch (_) {}
-        if (getTheme() === 'dark') activateHeroVideo();
         introGate.classList.add('is-blooming');
         document.body.classList.add('intro-revealing');
         setTimeout(() => introGate.classList.add('is-revealing'), 260);
         setTimeout(() => {
           introGate.hidden = true;
-          introVideo?.pause();
           setIntroLocked(false);
           document.body.classList.remove('intro-revealing');
           introGate.classList.remove('is-blooming', 'is-revealing');
@@ -238,11 +256,7 @@
         started = true;
         introGate.classList.add('is-playing');
         startMusic();
-        if (reduceMotion) {
-          revealIntro();
-          return;
-        }
-        revealTimer = setTimeout(revealIntro, 900);
+        setTimeout(revealIntro, 900);
       };
 
       introOpen.addEventListener('click', playIntro);
@@ -287,34 +301,22 @@
   const lightbox = document.getElementById('lightbox');
   const lightboxImg = document.getElementById('lightbox-img');
   const lightboxClose = document.getElementById('lightbox-close');
-  const lightboxPrev = document.getElementById('lightbox-prev');
-  const lightboxNext = document.getElementById('lightbox-next');
-  let lightboxOpen = false;
-  let lightboxIdx = 0;
 
   if (stage && len > 0) {
-    let justSwiped = false;
     galleryPhotos.forEach((src, i) => {
       const slide = document.createElement('div');
       slide.className = 'carousel-slide';
       const img = document.createElement('img');
       img.src = `${BASE}/assets/photos/${src}`;
       img.alt = '';
-      img.loading = i === 0 ? 'eager' : 'lazy';
       slide.appendChild(img);
-      slide.addEventListener('click', () => {
-        if (justSwiped) return;
-        if (slide.classList.contains('is-active')) openLightbox(i);
-        else if (slide.classList.contains('is-side')) goTo(i, true);
-      });
       stage.appendChild(slide);
 
       if (dotsEl) {
         const dot = document.createElement('button');
         dot.type = 'button';
         dot.className = 'carousel-dot';
-        dot.setAttribute('aria-label', t('photo')(i + 1));
-        dot.addEventListener('click', () => goTo(i, true));
+        dot.addEventListener('click', () => goTo(i));
         dotsEl.appendChild(dot);
       }
     });
@@ -333,30 +335,33 @@
         else if (Math.abs(offset) === 1) { slide.style.transform = `translateX(${offset * 88}%) scale(0.78)`; slide.classList.add('is-side'); }
         else { slide.style.transform = `translateX(${offset * 110}%) scale(0.55)`; slide.classList.add('is-hidden'); }
       });
-      dots.forEach((d, i) => { const on = i === current; d.classList.toggle('is-active', on); if (on) d.setAttribute('aria-current', 'true'); else d.removeAttribute('aria-current'); });
+      dots.forEach((d, i) => d.classList.toggle('is-active', i === current));
     };
     const goTo = (i) => { current = ((i % len) + len) % len; render(); };
     prevBtn?.addEventListener('click', () => goTo(current - 1));
     nextBtn?.addEventListener('click', () => goTo(current + 1));
-
     render();
-
-    const showInLightbox = (idx) => { lightboxIdx = ((idx % len) + len) % len; lightboxImg.src = `${BASE}/assets/photos/${galleryPhotos[lightboxIdx]}`; };
-    const openLightbox = (idx) => {
-      if (!lightbox) return;
-      showInLightbox(idx);
-      lightbox.removeAttribute('hidden');
-      lightboxOpen = true;
-    };
-    const closeLightbox = () => {
-      if (!lightbox) return;
-      lightbox.setAttribute('hidden', '');
-      lightboxOpen = false;
-    };
-    lightboxClose?.addEventListener('click', closeLightbox);
-    lightboxPrev?.addEventListener('click', () => showInLightbox(lightboxIdx - 1));
-    lightboxNext?.addEventListener('click', () => showInLightbox(lightboxIdx + 1));
   }
+
+  // ---------- Helper for Telegram Notifications ----------
+  const sendTelegramMessage = async (botToken, chatId, messageText) => {
+    if (!botToken || !chatId) return false;
+    try {
+      const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: messageText,
+          parse_mode: 'HTML'
+        })
+      });
+      return res.ok;
+    } catch (err) {
+      console.warn('Telegram Notification Error:', err);
+      return false;
+    }
+  };
 
   // ---------- Wishes wall ----------
   const fmtDate = (s) => { const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? `${m[3]}.${m[2]}.${m[1]}` : ''; };
@@ -364,13 +369,8 @@
   const wishDots = document.getElementById('wishes-dots');
   const wishPrev = document.getElementById('wishes-prev');
   const wishNext = document.getElementById('wishes-next');
-  const wishReadAll = document.getElementById('wishes-readall');
-  const wishModal = document.getElementById('wishes-modal');
-  const wishModalClose = document.getElementById('wishes-modal-close');
-  const wishList = document.getElementById('wishes-list');
   const wishForm = document.getElementById('wish-form');
   const wishMsg = document.getElementById('wish-msg');
-  const lampEl = document.getElementById('wish-lamp');
 
   let wishes = JSON.parse(localStorage.getItem('khoserdene_wishes') || '[]');
   if (!wishes.length) {
@@ -398,11 +398,10 @@
   };
 
   renderWish(0);
-
   wishPrev?.addEventListener('click', () => renderWish(wishCurrent - 1));
   wishNext?.addEventListener('click', () => renderWish(wishCurrent + 1));
 
-  // Wish submit -> Telegram & LocalStorage
+  // Wish submit with Telegram notification
   wishForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     wishMsg.className = 'form-msg';
@@ -414,32 +413,27 @@
     if (!message) { wishMsg.className = 'form-msg is-err'; wishMsg.textContent = t('needWish'); return; }
 
     const btn = wishForm.querySelector('.submit-btn');
-    btn.disabled = true; btn.classList.add('is-loading');
+    if (btn) { btn.disabled = true; btn.classList.add('is-loading'); }
 
-    // Send Telegram Notification
-    const token = TELEGRAM_BOT_TOKEN || wishForm.dataset.telegramToken;
-    const chatId = TELEGRAM_CHAT_ID || wishForm.dataset.telegramChatId;
-    if (token && chatId) {
-      const text = `💬 <b>Шинэ Сэтгэлийн Үг ирлээ!</b>\n\n👤 <b>Нэр:</b> ${name}\n📝 <b>Ерөөл:</b> ${message}\n📅 <b>Хурим:</b> М.Хос-Эрдэнэ & Б.Одонтулгалаг (2026.09.28)`;
-      try {
-        await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ chat_id: chatId, text: text, parse_mode: 'HTML' })
-        });
-      } catch (err) {
-        console.warn('Telegram wish failed:', err);
-      }
+    // Telegram Bot notify
+    const rsvpForm = document.getElementById('rsvp-form');
+    const botToken = rsvpForm?.dataset.botToken || wishForm.dataset.botToken || window.TELEGRAM_BOT_TOKEN || '';
+    const chatId = rsvpForm?.dataset.chatId || wishForm.dataset.chatId || window.TELEGRAM_CHAT_ID || '';
+
+    if (botToken && chatId) {
+      const tgText = `💌 <b>ШИНЭ СЭТГЭЛИЙН ҮГ / ЕРӨӨЛ</b>\n\n👤 <b>Нэр:</b> ${escapeHTML(name)}\n💬 <b>Ерөөл:</b> "${escapeHTML(message)}"\n📅 <b>Огноо:</b> ${new Date().toLocaleString('mn-MN')}`;
+      await sendTelegramMessage(botToken, chatId, tgText);
     }
 
+    wishes.unshift({ name, message, created_at: new Date().toISOString().replace('T', ' ').slice(0, 19) });
+    localStorage.setItem('khoserdene_wishes', JSON.stringify(wishes));
+    renderWish(0);
+
     setTimeout(() => {
-      btn.disabled = false; btn.classList.remove('is-loading');
+      if (btn) { btn.disabled = false; btn.classList.remove('is-loading'); }
       wishForm.reset();
       wishMsg.className = 'form-msg is-ok';
       wishMsg.textContent = t('wishOk');
-      wishes.unshift({ name, message, created_at: new Date().toISOString().replace('T', ' ').slice(0, 19) });
-      localStorage.setItem('khoserdene_wishes', JSON.stringify(wishes));
-      renderWish(0);
     }, 400);
   });
 
@@ -463,7 +457,7 @@
     tick(); setInterval(tick, 1000);
   });
 
-  // ---------- RSVP Form -> Telegram ----------
+  // ---------- RSVP form with Telegram Bot Integration ----------
   guard(() => {
     const form = document.getElementById('rsvp-form');
     if (!form) return;
@@ -477,38 +471,42 @@
       const fd = new FormData(form);
       const name = String(fd.get('name') || '').trim();
       const attendance = String(fd.get('attendance') || '');
+
       if (!name) { setMsg('form-msg is-err', 'needName'); return; }
       if (!attendance) { setMsg('form-msg is-err', 'needAttend'); return; }
+
       if (submitBtn) { submitBtn.disabled = true; submitBtn.classList.add('is-loading'); }
 
-      // Mongolian status text
-      let attendText = 'Баяртайгаар оролцоно';
-      if (attendance === 'with_spouse') attendText = 'Хамтрагчтайгаа оролцоно';
-      if (attendance === 'no') attendText = 'Харамсалтай нь ирж чадахгүй';
+      const attendanceLabels = {
+        yes: '🟢 Баяртайгаар оролцоно',
+        with_spouse: '👩‍❤️‍👨 Хамтрагчтайгаа оролцоно',
+        no: '🔴 Харамсалтай нь ирж чадахгүй'
+      };
+      const labelText = attendanceLabels[attendance] || attendance;
 
-      // Send to Telegram Bot
-      const token = TELEGRAM_BOT_TOKEN || form.dataset.telegramToken || document.body.dataset.telegramToken;
-      const chatId = TELEGRAM_CHAT_ID || form.dataset.telegramChatId || document.body.dataset.telegramChatId;
+      // Telegram Bot notify
+      const botToken = form.dataset.botToken || window.TELEGRAM_BOT_TOKEN || '';
+      const chatId = form.dataset.chatId || window.TELEGRAM_CHAT_ID || '';
 
-      if (token && chatId) {
-        const text = `💍 <b>ШИНЭ RSVP ХАРИУ ИРЛЭЭ!</b>\n\n👤 <b>Зочны нэр:</b> ${name}\n📌 <b>Оролцох эсэх:</b> ${attendText}\n📅 <b>Хуримын өдөр:</b> 2026.09.28\n💒 <b>Хос:</b> М.Хос-Эрдэнэ & Б.Одонтулгалаг`;
-        try {
-          await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chat_id: chatId, text: text, parse_mode: 'HTML' })
-          });
-        } catch (err) {
-          console.warn('Telegram RSVP send failed:', err);
-        }
+      if (botToken && chatId) {
+        const tgText = `💒 <b>ХУРИМЫН RSVP БАТАЛГААЖУУЛАЛТ</b>\n\n👤 <b>Зочны нэр:</b> ${escapeHTML(name)}\n📌 <b>Шийдвэр:</b> ${labelText}\n📅 <b>Илгээсэн цаг:</b> ${new Date().toLocaleString('mn-MN')}`;
+        await sendTelegramMessage(botToken, chatId, tgText);
       }
+
+      // Local storage save
+      localStorage.setItem('khoserdene_rsvp', JSON.stringify({ name, attendance, date: new Date().toISOString() }));
 
       setTimeout(() => {
         if (submitBtn) { submitBtn.disabled = false; submitBtn.classList.remove('is-loading'); }
         setMsg('form-msg is-ok', 'rsvpOk');
         form.reset();
-        localStorage.setItem('khoserdene_rsvp', JSON.stringify({ name, attendance }));
       }, 400);
     });
   });
+
+  function escapeHTML(str) {
+    return String(str).replace(/[&<>'"]/g, 
+      tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+    );
+  }
 })();
