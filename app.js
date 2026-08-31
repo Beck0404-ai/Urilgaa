@@ -372,7 +372,8 @@
   const wishForm = document.getElementById('wish-form');
   const wishMsg = document.getElementById('wish-msg');
 
-  let wishes = JSON.parse(localStorage.getItem('khoserdene_wishes') || '[]');
+  try { localStorage.removeItem('khoserdene_wishes'); localStorage.removeItem('mk_wishes'); } catch (_) {}
+  let wishes = JSON.parse(localStorage.getItem('khoserdene_wishes_clean') || '[]');
   let wishCurrent = 0;
 
   const buildWishSlide = (w) => {
@@ -431,7 +432,7 @@
 
     const newWish = { name, message, created_at: new Date().toISOString().replace('T', ' ').slice(0, 19) };
     wishes.unshift(newWish);
-    localStorage.setItem('khoserdene_wishes', JSON.stringify(wishes));
+    localStorage.setItem('khoserdene_wishes_clean', JSON.stringify(wishes));
     wishCurrent = 0;
     renderWishesView();
 
