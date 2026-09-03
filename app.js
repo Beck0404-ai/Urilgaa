@@ -295,7 +295,7 @@
   const dotsEl = document.getElementById('carousel-dots');
   const prevBtn = document.getElementById('carousel-prev');
   const nextBtn = document.getElementById('carousel-next');
-  const galleryPhotos = PHOTOS.length > 0 ? PHOTOS : ['hero.jpg', 'candid.jpg', 'detail.jpg', 'venue.jpg'];
+  const galleryPhotos = PHOTOS.length > 0 ? PHOTOS : ['detail.jpg', 'candid.jpg'];
   const len = galleryPhotos.length;
 
   const lightbox = document.getElementById('lightbox');
