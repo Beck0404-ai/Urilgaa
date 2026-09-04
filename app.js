@@ -372,8 +372,11 @@
   const wishForm = document.getElementById('wish-form');
   const wishMsg = document.getElementById('wish-msg');
 
-  try { localStorage.removeItem('khoserdene_wishes'); localStorage.removeItem('mk_wishes'); } catch (_) {}
-  let wishes = JSON.parse(localStorage.getItem('khoserdene_wishes_clean') || '[]');
+  let wishes = [];
+  try {
+    wishes = JSON.parse(localStorage.getItem('khoserdene_wishes_v3') || '[]');
+  } catch (_) { wishes = []; }
+
   let wishCurrent = 0;
 
   const buildWishSlide = (w) => {
@@ -432,7 +435,7 @@
 
     const newWish = { name, message, created_at: new Date().toISOString().replace('T', ' ').slice(0, 19) };
     wishes.unshift(newWish);
-    localStorage.setItem('khoserdene_wishes_clean', JSON.stringify(wishes));
+    try { localStorage.setItem('khoserdene_wishes_v3', JSON.stringify(wishes)); } catch (_) {}
     wishCurrent = 0;
     renderWishesView();
 
