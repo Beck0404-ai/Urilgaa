@@ -373,7 +373,7 @@
   const wishMsg = document.getElementById('wish-msg');
 
   let localWishes = [];
-  try { localWishes = JSON.parse(localStorage.getItem('khoserdene_wishes_v3') || '[]'); } catch (_) { localWishes = []; }
+  try { localWishes = JSON.parse(localStorage.getItem('khoserdene_wishes_v4') || '[]'); } catch (_) { localWishes = []; }
   let wishes = [...localWishes];
   let wishCurrent = 0;
 
@@ -456,7 +456,7 @@
 
     const newWish = { name, message, created_at: new Date().toISOString().replace('T', ' ').slice(0, 19) };
     wishes.unshift(newWish);
-    try { localStorage.setItem('khoserdene_wishes_v3', JSON.stringify(wishes)); } catch (_) {}
+    try { localStorage.setItem('khoserdene_wishes_v4', JSON.stringify(wishes)); } catch (_) {}
     wishCurrent = 0;
     renderWishesView();
 
