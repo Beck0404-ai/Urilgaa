@@ -372,11 +372,9 @@
   const wishForm = document.getElementById('wish-form');
   const wishMsg = document.getElementById('wish-msg');
 
-  let wishes = [];
-  try {
-    wishes = JSON.parse(localStorage.getItem('khoserdene_wishes_v3') || '[]');
-  } catch (_) { wishes = []; }
-
+  let localWishes = [];
+  try { localWishes = JSON.parse(localStorage.getItem('khoserdene_wishes_v3') || '[]'); } catch (_) { localWishes = []; }
+  let wishes = [...localWishes];
   let wishCurrent = 0;
 
   const buildWishSlide = (w) => {
@@ -405,7 +403,30 @@
     wishStage.replaceChildren(buildWishSlide(wishes[wishCurrent]));
   };
 
+  const fetchServerWishes = async () => {
+    try {
+      const wishesUrl = BASE ? `${BASE}/wishes.json?t=${Date.now()}` : `wishes.json?t=${Date.now()}`;
+      const res = await fetch(wishesUrl);
+      if (res.ok) {
+        const serverData = await res.json();
+        if (Array.isArray(serverData)) {
+          const combined = [...localWishes, ...serverData];
+          const unique = [];
+          const seen = new Set();
+          for (const item of combined) {
+            const key = `${item.name}-${item.message}`;
+            if (!seen.has(key)) { seen.add(key); unique.push(item); }
+          }
+          wishes = unique;
+          renderWishesView();
+        }
+      }
+    } catch (_) { /* ignore network error */ }
+  };
+
   renderWishesView();
+  fetchServerWishes();
+
   wishPrev?.addEventListener('click', () => { wishCurrent--; renderWishesView(); });
   wishNext?.addEventListener('click', () => { wishCurrent++; renderWishesView(); });
 
